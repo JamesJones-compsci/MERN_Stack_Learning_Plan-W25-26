@@ -1,0 +1,84 @@
+# ----------------------------------------------------------------------------------
+# Commands to run this compose file:
+#
+#   docker compose -p classmate_backend -f docker-compose.yml up -d
+#       - Starts containers in detached mode (-d)
+#       - Uses existing images if already built
+#
+#   docker compose -p classmate_backend -f docker-compose.yml up -d --build
+#       - Forces rebuild of images before starting containers
+# ----------------------------------------------------------------------------------
+
+# version: "3.9"
+
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: cm_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+
+  mongodb:
+    image: mongo:7
+    container_name: cm_mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+
+
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    depends_on:
+      - postgres
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    ports:
+      - "8083:8083"
+
+
+  course-service:
+    build: ./course-service
+    container_name: course-service
+    depends_on:
+      - postgres
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    ports:
+      - "8081:8081"
+
+
+  task-service:
+    build: ./task-service
+    container_name: task-service
+    depends_on:
+      - mongodb
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_URI: ${SPRING_DATA_MONGODB_URI}
+    ports:
+      - "8082:8082"
+
+volumes:
+  pgdata:
+  mongodata:
