@@ -13,6 +13,9 @@
 
 services:
 
+  # ===============================
+  # PostgreSQL
+  # ===============================
   postgres:
     image: postgres:16
     container_name: cm_postgres
@@ -25,26 +28,33 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - cm-network
 
 
+  # ===============================
+  # MongoDB
+  # ===============================
   mongodb:
     image: mongo:7
-    container_name: cm_mongodb
-    restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    container_name: cm-mongodb
+    restart: unless-stopped
     ports:
       - "27017:27017"
-    volumes:
-      - mongodata:/data/db
+    networks:
+      - cm-network
 
-
+  # ===============================
+  # User Service
+  # ===============================
   user-service:
-    build: ./user-service
+    build:
+      context: ./user-service
+    image: classmate_backend-user-service
     container_name: user-service
     depends_on:
       - postgres
+    restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
@@ -52,13 +62,20 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
     ports:
       - "8083:8083"
+    networks:
+      - cm-network
 
-
+  # ===============================
+  # Course Service
+  # ===============================
   course-service:
-    build: ./course-service
+    build:
+     context: ./course-service
+    image: classmate_backend-course-service
     container_name: course-service
     depends_on:
       - postgres
+    restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
@@ -66,18 +83,33 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
     ports:
       - "8081:8081"
+    networks:
+      - cm-network
 
-
+  # ===============================
+  # Task Service
+  # ===============================
   task-service:
-    build: ./task-service
+    build:
+     context: ./task-service
+    image: classmate_backend-task-service
     container_name: task-service
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_started
+    restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATA_MONGODB_URI: ${SPRING_DATA_MONGODB_URI}
     ports:
       - "8082:8082"
+    command: ["./wait-for-it.sh", "cm-mongodb:27017", "--", "java", "-jar", "app.jar", "--spring.profiles.active=docker"]
+    networks:
+      - cm-network
+
+networks:
+  cm-network:
+    driver: bridge
 
 volumes:
   pgdata:
