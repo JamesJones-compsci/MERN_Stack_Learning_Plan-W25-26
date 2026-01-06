@@ -1,6 +1,7 @@
 package com.classmate.taskservice;
 
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -12,9 +13,12 @@ public class TaskServiceApplication {
         SpringApplication.run(TaskServiceApplication.class, args);
     }
 
+    @Value("${spring.mongodb.uri}")
+    private String mongoUri;
+
     @PostConstruct
     public void logMongoUri() {
-        System.out.println("Mongo URI: " + System.getProperty("spring.data.mongodb.uri"));
+        System.out.println("Mongo URI: " + mongoUri);
     }
 
 }
