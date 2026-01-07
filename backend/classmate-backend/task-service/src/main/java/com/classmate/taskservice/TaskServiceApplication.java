@@ -13,7 +13,7 @@ public class TaskServiceApplication {
         SpringApplication.run(TaskServiceApplication.class, args);
     }
 
-    @Value("${spring.mongodb.uri}")
+    @Value("${spring.data.mongodb.uri}")
     private String mongoUri;
 
     @PostConstruct
