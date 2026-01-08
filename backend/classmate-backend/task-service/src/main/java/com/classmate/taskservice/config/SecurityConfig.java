@@ -26,9 +26,6 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // If you have authentication endpoints (like /api/auth/**), allow them here:
-                        .requestMatchers("/api/auth/**").permitAll()
-                        // All other requests require authentication
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

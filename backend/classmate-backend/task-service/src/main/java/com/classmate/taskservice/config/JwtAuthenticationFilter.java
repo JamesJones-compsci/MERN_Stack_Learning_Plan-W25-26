@@ -31,40 +31,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // Skip authentication for auth endpoints
+        // Skip auth endpoints if any exist later
         if (path.startsWith("/api/auth/")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Get Authorization header
         String header = request.getHeader("Authorization");
+
         if (header == null || !header.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Extract JWT token
-        String token = header.substring(7); // Remove "Bearer " prefix
+        String token = header.substring(7);
         String email;
 
         try {
             email = jwtService.extractEmail(token);
         } catch (Exception e) {
-            // If token invalid, skip authentication
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Set authentication in SecurityContext
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            // Use email string directly as principal — this ensures Principal.getName() returns the email
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(email, null, List.of());
+
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
-        // Continue the filter chain
         filterChain.doFilter(request, response);
     }
 }
