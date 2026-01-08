@@ -4,10 +4,9 @@ import com.classmate.taskservice.dto.TaskRequestDTO;
 import com.classmate.taskservice.dto.TaskResponseDTO;
 import com.classmate.taskservice.model.Task;
 import com.classmate.taskservice.service.TaskService;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,8 +21,9 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<TaskResponseDTO> getTasks(@AuthenticationPrincipal Jwt jwt) {
-        String userEmail = jwt.getSubject();
+    public List<TaskResponseDTO> getTasks(Principal principal) {
+        String userEmail = principal.getName();
+
         return taskService.getTasksForUser(userEmail)
                 .stream()
                 .map(TaskResponseDTO::fromEntity)
@@ -32,14 +32,16 @@ public class TaskController {
 
     @PostMapping
     public TaskResponseDTO createTask(@RequestBody TaskRequestDTO request,
-                                      @AuthenticationPrincipal Jwt jwt) {
-        String userEmail = jwt.getSubject();
+                                      Principal principal) {
+        String userEmail = principal.getName();
+
         Task task = new Task(
                 request.getCode(),
                 request.getTitle(),
                 request.getDescription(),
                 userEmail
         );
+
         Task savedTask = taskService.createTask(task);
         return TaskResponseDTO.fromEntity(savedTask);
     }
@@ -47,22 +49,24 @@ public class TaskController {
     @PutMapping("/{id}")
     public TaskResponseDTO updateTask(@PathVariable String id,
                                       @RequestBody TaskRequestDTO request,
-                                      @AuthenticationPrincipal Jwt jwt) {
-        String userEmail = jwt.getSubject();
+                                      Principal principal) {
+        String userEmail = principal.getName();
+
         Task task = new Task(
                 request.getCode(),
                 request.getTitle(),
                 request.getDescription(),
                 userEmail
         );
+
         Task updatedTask = taskService.updateTask(id, task, userEmail);
         return TaskResponseDTO.fromEntity(updatedTask);
     }
 
     @DeleteMapping("/{id}")
     public void deleteTask(@PathVariable String id,
-                           @AuthenticationPrincipal Jwt jwt) {
-        String userEmail = jwt.getSubject();
+                           Principal principal) {
+        String userEmail = principal.getName();
         taskService.deleteTask(id, userEmail);
     }
 }
